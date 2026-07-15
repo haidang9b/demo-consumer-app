@@ -1,0 +1,35 @@
+name: servicebus-emulator
+
+services:
+  emulator:
+    container_name: servicebus-emulator
+    image: mcr.microsoft.com/azure-messaging/servicebus-emulator:latest
+    pull_policy: always
+    volumes:
+      - "./servicebus-config.json:/ServiceBus_Emulator/ConfigFiles/Config.json"
+    ports:
+      - "5672:5672"   # AMQP - used by client connection strings
+      - "5300:5300"   # HTTP management endpoint
+    environment:
+      SQL_SERVER: sqledge
+      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD}"
+      ACCEPT_EULA: "Y"
+    depends_on:
+      sqledge:
+        condition: service_started
+    networks:
+      - sb-emulator
+
+  sqledge:
+    container_name: sqledge
+    image: mcr.microsoft.com/azure-sql-edge:latest
+    ports:
+      - "1434:1433"   # SQL - host 1434 -> container 1433, used by the Function's Dapper repository
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD}"
+    networks:
+      - sb-emulator
+
+networks:
+  sb-emulator:
